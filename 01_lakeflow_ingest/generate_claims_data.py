@@ -236,7 +236,7 @@ for m in random.sample(members, k=min(len(members), int(N_MEMBERS * 1.2)) if Fal
 # ---------------------------------------------------------------------------
 # Write Delta tables into the governed schema
 # ---------------------------------------------------------------------------
-spark.sql(f"CREATE CATALOG IF NOT EXISTS {CATALOG}")
+# Catalog is assumed to exist (managed catalog on the workspace); create only the schema.
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.{SCHEMA}")
 
 def write(name, rows):

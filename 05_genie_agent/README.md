@@ -9,5 +9,8 @@ Lets a claims analyst ask in plain English and get a governed answer over the sa
 ## Set up
 Create the Genie space against the `claims_intelligence` schema, add the certified metric views (`claims_metrics`, `disposition_metrics`) plus the base tables, paste the general instructions, and register the trusted SQL. The `fe-internal-tools:genie-rooms` or `databricks-genie-agents` skill can author this programmatically.
 
+## Executed on fevm
+Genie space **Cascade Claims Intelligence** (`space_id 01f1b7a7a3511f52a02ca9d65a9d353f`) created over the governed schema; a live NL→SQL→answer trace is captured in [`../evidence/RUN_EVIDENCE.md`](../evidence/RUN_EVIDENCE.md) §6 (Genie selected the certified `disposition_action_gap` view).
+
 ## Capture evidence (the pass-critical trace)
 Ask via the Genie Conversation API, for example: *"What is our downstream-action-fired rate by disposition, and where is the biggest gap?"* Capture the generated SQL (should select the metric view and `MEASURE()`), the natural-language answer, and the conversation id, verbatim, into `../evidence/RUN_EVIDENCE.md` §6.

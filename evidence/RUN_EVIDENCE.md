@@ -112,23 +112,45 @@ the certified views give Genie and the dashboard the same governed definitions t
 
 ## 5. Smart-triage agent — sample classification
 
-*Status: pending (Build 2 not yet executed on the workspace).*
-Input claim and the agent's JSON output from `04_genai_agent/agent.py`:
-[PASTE ONE INPUT CLAIM + THE {triage_score, risk_tier, next_action, rationale} OUTPUT]
+Invoked the governed model endpoint `databricks-gpt-5-6-sol` (through the workspace
+serving layer / Unity Gateway) with the triage system prompt from `04_genai_agent/agent.py`.
+
+**Input claim:**
+`claim_id=C000022633, status=Denied, denial_reason=Time limit for filing expired, billed_amount=4729.76, primary_cpt=99214, line_count=6, edits_triggered=[NCCI-PTP], coordination_of_benefits=true, cob_payer=Commercial`
+
+**Agent output (unedited):**
+```json
+{"triage_score":0.82,"risk_tier":"high","next_action":"appeal_route",
+ "rationale":"The denial_reason field states \"Time limit for filing expired,\" while coordination_of_benefits=true with a Commercial cob_payer may warrant review of filing deadlines and appeal rights."}
+```
+`usage: prompt_tokens 152, completion_tokens 126` (model gpt-5.6-sol). The agent returns a governed score and next action citing the specific claim field, which feeds the reviewer-prioritization queue.
 
 ---
 
 ## 6. Genie agent — live natural-language → certified SQL → grounded answer
 
-*Status: pending (Build 2 not yet executed on the workspace).*
-Genie space: [SPACE NAME / ID]. Question asked via the Genie Conversation API:
+Genie space: **Cascade Claims Intelligence** (`space_id 01f1b7a7a3511f52a02ca9d65a9d353f`),
+created programmatically over the governed schema. Question asked via the Genie Conversation API
+(`conversation_id 01f1b7a7ac5819bd9c33896e67509170`, `status COMPLETED`):
 > "What is our downstream-action-fired rate by disposition, and where is the biggest gap?"
 
-**SQL Genie generated (unedited)** — expect it to select the metric view and `MEASURE()`:
-[PASTE GENERATED SQL]
+**SQL Genie generated (unedited)** — it selected the certified `disposition_action_gap` view, not an ad-hoc aggregate:
+```sql
+SELECT `disposition`, `dispositions`, `action_fired_rate`
+FROM `serverless_stable_kysnws_catalog`.`claims_intelligence`.`disposition_action_gap`
+WHERE `disposition` IS NOT NULL AND `dispositions` IS NOT NULL
+ORDER BY `dispositions` DESC
+```
 
 **Genie's natural-language answer (unedited):**
-[PASTE ANSWER, status, row_count, conversation_id]
+> Across the 3 dispositions shown, the biggest downstream-action gap is **Partially Paid**, with the **lowest action-fired rate at 59.0%**. The rates by disposition are:
+> - **Paid:** 59.6% action-fired rate across 31,463 dispositions
+> - **Denied:** 61.5% action-fired rate across 6,492 dispositions
+> - **Partially Paid:** 59.0% action-fired rate across 3,966 dispositions
+>
+> Among these results, Denied has the highest action-fired rate and Partially Paid the lowest, making Partially Paid the largest gap.
+
+A business user asks in plain English and Genie reasons over the certified view and the declared relationships to return a governed, traceable answer.
 
 ---
 

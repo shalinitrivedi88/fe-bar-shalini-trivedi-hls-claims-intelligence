@@ -1,0 +1,8 @@
+command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+env:
+  - name: CATALOG
+    value: serverless_stable_kysnws_catalog
+  - name: SCHEMA
+    value: claims_intelligence
+  - name: WAREHOUSE_ID
+    value: a2fb11a86770690f

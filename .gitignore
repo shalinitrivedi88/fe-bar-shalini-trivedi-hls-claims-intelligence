@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Node / frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.local
+*.pem
+
+# Generated synthetic data (regenerate with 01_lakeflow_ingest/generate_claims_data.py)
+/data_out/
+*.parquet
+
+# OS
+.DS_Store
+
+# Databricks
+.databricks/

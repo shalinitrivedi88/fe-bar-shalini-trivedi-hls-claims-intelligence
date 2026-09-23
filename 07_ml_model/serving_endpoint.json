@@ -1,0 +1,13 @@
+{
+  "name": "claim-manual-review",
+  "config": {
+    "served_entities": [
+      {
+        "entity_name": "serverless_stable_kysnws_catalog.claims_intelligence.claim_manual_review_model",
+        "entity_version": "1",
+        "workload_size": "Small",
+        "scale_to_zero_enabled": true
+      }
+    ]
+  }
+}

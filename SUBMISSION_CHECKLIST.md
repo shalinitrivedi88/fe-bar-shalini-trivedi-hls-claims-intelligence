@@ -10,16 +10,16 @@ Status of everything the submission form asks for. **Nothing has been submitted*
 - [x] **Presentation deck** — `deck/DECK.md` (outcome-led; exec + technical framing).
 - [x] **Synthetic data only** — no real customer data; fictional customer name (Cascade Benefit Systems).
 
-## Must run on the workspace before submitting (this is where the pass is won)
-> The FE BAR Build domain requires **evidence the build actually ran, committed as text** — this is the #1 pass-blocker. The scaffold is not enough on its own.
-- [ ] **Generate + ingest data** — run `01_lakeflow_ingest/generate_claims_data.py` and the pipeline on `fevm`; capture row counts into `evidence/RUN_EVIDENCE.md`.
-- [ ] **Apply governance** — run `02_unity_catalog_governance/*.sql`; capture the PK/FK constraint listing and a PHI-mask before/after into evidence.
-- [ ] **Deploy Lakebase** — create the `cascade-claims-ods` instance, seed it, run the hybrid relational+JSON query; capture into `evidence/LAKEBASE_DEPLOYMENT.md`.
-- [ ] **Certified metric views** — run the disposition-rate / downstream-action-fired / dollar-exposure queries with `MEASURE()`; capture results.
-- [ ] **Genie trace** — ask a claims question via the Genie Conversation API; capture the NL→SQL→answer trace verbatim into evidence §6.
-- [ ] **Triage agent** — deploy and invoke; capture a sample classification + next-action output.
-- [ ] **ML model** — train, register in UC, score, serve; capture metrics into `evidence/ML_MODEL.md` (report AUC honestly).
-- [ ] **App** — deploy the Claims Operations Console; confirm it reads the governed SQL and proxies chat.
+## Executed on fevm (evidence committed as text)
+> The FE BAR Build domain requires **evidence the build actually ran, committed as text** — the #1 pass-blocker. Status below reflects the 2026-09-23 run.
+- [x] **Generate + ingest data** — 50k claims + full book generated on serverless; row counts in `evidence/RUN_EVIDENCE.md` §1.
+- [x] **Apply governance** — 5 PK + 5 FK RELY declared; PHI masks verified (masked read); §2-§3.
+- [x] **Deploy Lakebase** — project `cascade-claims-ods` created, 500 rows seeded, hybrid relational+JSON query verified; `evidence/LAKEBASE_DEPLOYMENT.md`.
+- [x] **Certified views** — dollar exposure + disposition-action gap captured; §4. (Metric-view `MEASURE()` YAML deferred; plain certified views used.)
+- [x] **Genie trace** — space created, live NL→SQL→answer over the certified view; §6.
+- [x] **Triage agent** — invoked the governed serving endpoint on a real claim; §5.
+- [x] **App** — `claims-ops-console` deployed (RUNNING), API returns governed data; `evidence/APP_DEPLOYMENT.md`.
+- [~] **ML model** — trained + scored 50k claims (`evidence/ML_MODEL.md`); UC registration + serving blocked by the shared-metastore 5,000-model quota (env limit, not code) — re-run `REGISTER_UC=true` when quota frees.
 
 ## Form actions (I won't submit for you)
 - [ ] **Repo pushed** to `shalinitrivedi88/fe-bar-shalini-trivedi-hls-claims-intelligence` (public; internal-process notes stay in the Google Doc, not here).

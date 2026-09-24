@@ -1,4 +1,4 @@
-# FE BAR — Submission narrative (paste into the form fields)
+# FE BAR Submission narrative (paste into the form fields)
 
 > Answers for the FE BAR submission form. Anchored to real, executed output in
 > [`evidence/`](evidence/). The FE BAR de-identifies submissions and bars

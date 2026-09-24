@@ -13,7 +13,9 @@ This build gives Cascade one governed platform where the operational store, the 
 
 - A claims ODS on Lakebase serves current claim state to the Harbor application directly, so the member experience stops lagging the nightly batch.
 - A smart-triage agent scores each claim on disposition and routes the highest-risk work first, and every disposition can fire a governed downstream action instead of waiting for a batch.
-- A denied and pended dollar pool feeds the rework pipeline; the analytics layer surfaces where it concentrates by disposition reason and provider. *(Exact figures are populated from the live run in [`evidence/RUN_EVIDENCE.md`](evidence/RUN_EVIDENCE.md).)*
+- **$23.9M sits in the denied and pending rework pool** ($82.2M billed across the 50,000-claim synthetic book); the analytics layer surfaces where it concentrates by disposition reason and provider (see [`evidence/RUN_EVIDENCE.md`](evidence/RUN_EVIDENCE.md)).
+
+**Estimated value.** Recovering even 10% of the $23.9M denied and pending pool through avoidable-denial prevention and faster appeal turnaround is roughly **$2.4M a year on this synthetic book**, and closing the ~40% disposition-action gap removes the manual chase on about 17,000 events. These are estimates on synthetic data, stated to be validated in the POC; the absolute number scales with a real processor's claim volume.
 
 **Value framing.** For a processor handling hundreds of millions of claims a year, moving claim availability from nightly batch to near-real-time, steering reviewers to the highest-risk claims, and letting analysts self-serve governed answers moves the exact metrics these owners are measured on: the VP of Claims Products' claim-to-availability latency and analyst self-serve rate, the CFO's exposure in the denied and pended pool, and the CISO's PHI governance posture across both planes.
 

@@ -44,6 +44,8 @@ The layers are connected, not siloed: every layer reads or writes the **same gov
 - **Event-driven disposition vs. batch.** A disposition fires a governed downstream action through orchestration rather than a nightly job scraping a table.
 
 ## What are the business outcomes and impact?
+**Estimated value:** on the 50,000-claim synthetic book, $23.9M sits in the denied and pending rework pool. Recovering even 10% through avoidable-denial prevention and faster appeal turnaround is roughly **$2.4M a year**, and closing the ~40% disposition-action gap removes the manual chase on about 17,000 events. These are estimates on synthetic data to be validated in the POC; the absolute number scales with a real processor's claim volume.
+
 Each outcome is tied to the metric a named owner is measured on:
 - **Lower claim-to-availability latency (VP of Claims Products).** The Harbor application reads current claim state from the Lakebase ODS instead of a nightly extract, so the member experience stops lagging the batch.
 - **Faster, prioritized disposition handling (VP of Claims Products).** The triage agent scores each claim on disposition and routes the highest-risk work first, and every disposition can fire a governed downstream action instead of waiting for a batch.

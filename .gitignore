@@ -9,6 +9,9 @@ venv/
 node_modules/
 dist/
 *.tsbuildinfo
+# but DO ship the built app bundle (Databricks Apps serve it; no node build on deploy)
+!06_databricks_app/frontend/dist/
+!06_databricks_app/frontend/dist/**
 
 # Env / secrets
 .env

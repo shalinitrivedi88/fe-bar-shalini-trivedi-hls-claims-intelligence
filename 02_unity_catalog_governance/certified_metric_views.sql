@@ -1,19 +1,20 @@
--- Certified metric views over the governed schema.
--- These give Genie and the dashboard ONE governed definition each, so a
--- natural-language question resolves to MEASURE(`Disposition Rate`), not an ad-hoc AVG.
--- Metric-view YAML syntax evolves; validate with the databricks-metric-views skill
--- before deploying. A plain-SQL fallback is at the bottom (guaranteed to run).
+-- Certified Unity Catalog Metric Views over the governed schema.
+-- These are real METRIC_VIEW objects (version 1.1) so Genie and dashboards resolve
+-- questions to MEASURE(...), one governed definition per metric, not ad-hoc aggregates.
+--
+-- DEPLOY NOTE: the CLI `aitools tools query` mangles multi-line YAML; deploy these via
+-- the SQL Statements API, which preserves newlines exactly:
+--   python3 -c "import json;json.dump({'warehouse_id':'<WH>','statement':open('this.sql').read(),'wait_timeout':'30s'},open('/tmp/r.json','w'))"
+--   databricks api post /api/2.0/sql/statements --json @/tmp/r.json --profile fevm
+-- Requires DBR/DBSQL 17.2+ (metric views). Verified live on fevm as METRIC_VIEW.
 
-USE CATALOG serverless_stable_kysnws_catalog;
-USE SCHEMA claims_intelligence;
-
-CREATE OR REPLACE VIEW claims_metrics
+CREATE OR REPLACE VIEW serverless_stable_kysnws_catalog.claims_intelligence.claims_metrics
 WITH METRICS
 LANGUAGE YAML
-COMMENT 'Certified claims operations metrics'
 AS $$
-version: 0.1
+version: 1.1
 source: serverless_stable_kysnws_catalog.claims_intelligence.claims
+comment: Certified claims operations metrics
 dimensions:
   - name: Status
     expr: status
@@ -38,13 +39,13 @@ measures:
     expr: AVG(requires_manual_review)
 $$;
 
-CREATE OR REPLACE VIEW disposition_metrics
+CREATE OR REPLACE VIEW serverless_stable_kysnws_catalog.claims_intelligence.disposition_metrics
 WITH METRICS
 LANGUAGE YAML
-COMMENT 'Certified disposition + downstream-action metrics'
 AS $$
-version: 0.1
+version: 1.1
 source: serverless_stable_kysnws_catalog.claims_intelligence.disposition_events
+comment: Certified disposition and downstream-action metrics
 dimensions:
   - name: Disposition
     expr: disposition
@@ -57,18 +58,12 @@ measures:
     expr: AVG(CASE WHEN downstream_action_fired THEN 1.0 ELSE 0.0 END)
 $$;
 
--- ---------------------------------------------------------------------------
--- Plain-SQL fallback views (guaranteed to run if metric views need validation)
--- ---------------------------------------------------------------------------
-CREATE OR REPLACE VIEW claims_dollar_exposure AS
-SELECT status,
-       COUNT(*)               AS claims,
-       ROUND(SUM(billed_amount)) AS total_billed,
-       ROUND(SUM(paid_amount))   AS total_paid
-FROM claims GROUP BY status ORDER BY total_billed DESC;
+-- Plain-SQL helper views (kept for dashboards / non-MEASURE consumers)
+CREATE OR REPLACE VIEW serverless_stable_kysnws_catalog.claims_intelligence.claims_dollar_exposure AS
+SELECT status, COUNT(*) AS claims, ROUND(SUM(billed_amount)) AS total_billed, ROUND(SUM(paid_amount)) AS total_paid
+FROM serverless_stable_kysnws_catalog.claims_intelligence.claims GROUP BY status ORDER BY total_billed DESC;
 
-CREATE OR REPLACE VIEW disposition_action_gap AS
-SELECT disposition,
-       COUNT(*)                                                        AS dispositions,
-       ROUND(AVG(CASE WHEN downstream_action_fired THEN 1.0 ELSE 0 END), 3) AS action_fired_rate
-FROM disposition_events GROUP BY disposition ORDER BY dispositions DESC;
+CREATE OR REPLACE VIEW serverless_stable_kysnws_catalog.claims_intelligence.disposition_action_gap AS
+SELECT disposition, COUNT(*) AS dispositions,
+       ROUND(AVG(CASE WHEN downstream_action_fired THEN 1.0 ELSE 0 END),3) AS action_fired_rate
+FROM serverless_stable_kysnws_catalog.claims_intelligence.disposition_events GROUP BY disposition ORDER BY dispositions DESC;

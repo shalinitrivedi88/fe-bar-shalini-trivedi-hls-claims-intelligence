@@ -6,3 +6,9 @@ env:
     value: claims_intelligence
   - name: WAREHOUSE_ID
     value: a2fb11a86770690f
+  - name: LAKEBASE_PROJECT
+    value: cascade-claims-ods
+  - name: EMBED_MODEL
+    value: databricks-bge-large-en
+  - name: CHAT_MODEL
+    value: databricks-gpt-5-6-sol

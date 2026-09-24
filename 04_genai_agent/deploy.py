@@ -1,58 +1,47 @@
 """
-Batch-score all recent dispositions with the triage agent and write the score +
-proposed action back to Lakebase claim_status (feeds the ops console and Harbor).
+Log, (optionally) register, and serve the ClaimsTriageSupervisor ResponsesAgent.
 
-For a served real-time endpoint, wrap triage_claim in an MLflow ResponsesAgent
-and register/serve it via Model Serving (validate with databricks-model-serving).
-This script is the batch path used to capture evidence.
+Logging works today. Registration to Unity Catalog + Model Serving are gated on
+REGISTER_UC=true because the shared metastore is at its 5,000 registered-model
+quota (see docs/FOLLOWUP.md). Once quota frees, run with REGISTER_UC=true to
+register and stand up the endpoint; server/routes/chat.py can then proxy to it.
+
+Run as a serverless job. Deps: mlflow, databricks-sdk[openai], databricks-sql-connector, openai.
 """
-
-import os
-import json
-import psycopg2
-from psycopg2.extras import execute_values
-from databricks.sdk import WorkspaceClient
-from pyspark.sql import SparkSession
-from agent import triage_claim
+import os, mlflow
+from mlflow.models.resources import DatabricksServingEndpoint, DatabricksGenieSpace, DatabricksSQLWarehouse
 
 CATALOG = os.environ.get("CATALOG", "serverless_stable_kysnws_catalog")
 SCHEMA = os.environ.get("SCHEMA", "claims_intelligence")
-LAKEBASE_INSTANCE = os.environ.get("LAKEBASE_INSTANCE", "cascade-claims-ods")
+MODEL_NAME = f"{CATALOG}.{SCHEMA}.claims_triage_agent"
+REGISTER = os.environ.get("REGISTER_UC", "false").lower() == "true"
+LLM = os.environ.get("AGENT_LLM", "databricks-claude-opus-4-8")
+GENIE_SPACE = os.environ.get("GENIE_SPACE_ID", "01f1b7a7a3511f52a02ca9d65a9d353f")
+WAREHOUSE = os.environ.get("WAREHOUSE_ID", "a2fb11a86770690f")
 
-w = WorkspaceClient()
-spark = SparkSession.builder.getOrCreate()
+mlflow.set_registry_uri("databricks-uc")
 
-# Score open/denied dispositions (bound the sample for a demo run)
-claims = spark.sql(f"""
-    SELECT claim_id, status, denial_reason, billed_amount, primary_cpt, claim_detail
-    FROM {CATALOG}.{SCHEMA}.claims
-    WHERE status IN ('Denied', 'Partially Paid', 'Pending')
-    LIMIT 200
-""").collect()
+# Declare the resources the served agent needs (auto-provisions auth on serving)
+resources = [
+    DatabricksServingEndpoint(endpoint_name=LLM),
+    DatabricksGenieSpace(genie_space_id=GENIE_SPACE),
+    DatabricksSQLWarehouse(warehouse_id=WAREHOUSE),
+]
 
-results = []
-for r in claims:
-    claim = {"claim_id": r.claim_id, "status": r.status,
-             "denial_reason": r.denial_reason, "billed_amount": r.billed_amount,
-             "primary_cpt": r.primary_cpt,
-             "claim_detail": json.loads(r.claim_detail) if r.claim_detail else {}}
-    t = triage_claim(claim)
-    results.append((float(t.get("triage_score", 0.5)),
-                    t.get("next_action", "none"), r.claim_id))
+with mlflow.start_run(run_name="claims_triage_agent"):
+    info = mlflow.pyfunc.log_model(
+        name="agent",
+        python_model="agent.py",   # the ResponsesAgent module (AGENT instance)
+        resources=resources,
+        pip_requirements=["mlflow", "databricks-sdk[openai]", "databricks-sql-connector", "openai"],
+        registered_model_name=(MODEL_NAME if REGISTER else None),
+    )
+    print("logged:", info.model_uri)
 
-# Write scores back to Lakebase
-inst = w.database.get_database_instance(name=LAKEBASE_INSTANCE)
-cred = w.database.generate_database_credential(instance_names=[LAKEBASE_INSTANCE])
-conn = psycopg2.connect(host=inst.read_write_dns, dbname="databricks_postgres",
-                        user=w.current_user.me().user_name, password=cred.token,
-                        sslmode="require", port=5432)
-conn.autocommit = True
-cur = conn.cursor()
-execute_values(cur, """
-    UPDATE claims_ods.claim_status AS cs
-    SET triage_score = d.score, triage_action = d.action, updated_at = now()
-    FROM (VALUES %s) AS d(score, action, claim_id)
-    WHERE cs.claim_id = d.claim_id
-""", results, template="(%s,%s,%s)")
-print(f"scored + wrote back {len(results)} claims")
-cur.close(); conn.close()
+if REGISTER:
+    from databricks.agents import deploy
+    deploy(MODEL_NAME, info.registered_model_version)  # creates the serving endpoint
+    print("served:", MODEL_NAME)
+else:
+    print("Registration/serving skipped (REGISTER_UC!=true). Metastore model quota is full; "
+          "re-run with REGISTER_UC=true when it frees.")

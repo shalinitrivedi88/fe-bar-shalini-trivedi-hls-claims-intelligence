@@ -10,6 +10,11 @@ Things to resolve as the build hardens, and the product-accuracy items to confir
 - Served-agent packaging (MLflow ResponsesAgent) and Unity Gateway routing: validate with databricks-model-serving.
 - Real-time / OLTP-OLAP convergence claims: what is GA vs preview today.
 
+## Environment limits hit during the fevm run
+- **UC registered-model quota:** the shared metastore is at its 5,000 registered-model cap, so the manual-review model could not be registered to Unity Catalog or served on Model Serving. The model trains, logs to MLflow, and scores the prioritization table fine. Re-run `07_ml_model/train_overturn_model.py` with `REGISTER_UC=true` once quota frees up (or on a metastore under the cap) to register + serve. Do not delete other users' models to make room.
+- **ai_query batch inference** is not enabled on the foundation-model endpoints here; the triage agent uses online `serving-endpoints query` instead.
+- **Metric-view `MEASURE()` YAML** dialect needs finalizing with the databricks-metric-views skill; certified plain-SQL views are used in the meantime.
+
 ## Build hardening
 - Stream disposition events continuously (Structured Streaming) rather than batch refresh.
 - Add a Lakebase synced table to keep `claim_status` in step with the lake automatically.

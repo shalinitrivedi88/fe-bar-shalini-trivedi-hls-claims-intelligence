@@ -6,8 +6,10 @@ A trained + served classifier that scores each claim's likelihood of needing man
 - `train_overturn_model.py` — trains a GradientBoosting classifier on `requires_manual_review`, logs with MLflow, registers to Unity Catalog (`claim_manual_review_model`, alias `champion`), and writes a `claim_review_priority` table.
 - `serving_endpoint.json` — Model Serving endpoint config.
 
-## Honesty note
-The synthetic label carries only a weak signal by design, so AUC will be modest. Report it as-is in `../evidence/ML_MODEL.md`. The BAR rewards the end-to-end pattern and the prioritization, not a fabricated AUC.
+## Executed on fevm
+Trained on serverless (run `f3d523bac709456f83ec2f8afe290bc9`), scored 50,000 claims into `claim_review_priority`. See [`../evidence/ML_MODEL.md`](../evidence/ML_MODEL.md). Test AUC 0.9241, reported with the honest caveat that the synthetic label is partly derived from features (`status`, `billed_amount`), so it is optimistic, not a real-world estimate.
+
+**UC registration + serving were blocked by the shared-metastore 5,000 registered-model quota** (`QUOTA_EXCEEDED`), an environment limit, not a code issue. Re-run with `REGISTER_UC=true` to register + serve once quota frees up. We did not delete other users' models to make room.
 
 ## Deploy the endpoint
 ```bash
